@@ -36,11 +36,11 @@ sample_length = .00709
 
 
 air_matrix = np.genfromtxt(
-    'empty.csv', 
+    'Empty_0,8-4,0.csv', 
     delimiter=',', 
     skip_header=1,
     dtype=complex, 
-    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
+    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(3)}
 )
 #metal_matrix = np.loadtxt(open("test.csv", "rb"), delimiter=",", skiprows=1)
 mut_matrix = np.genfromtxt(
@@ -48,10 +48,10 @@ mut_matrix = np.genfromtxt(
     delimiter=',', 
     skip_header=1,
     dtype=complex, 
-    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
+    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(3)}
 )
 
-cutoff_wavelength = .37474
+cutoff_wavelength = .3747
 c = 299792458
 wavelength = c / (air_matrix[:,0] * pow(10,9))
 beta = np.divide(2*math.pi, wavelength)
@@ -85,10 +85,12 @@ lambda_interim = -1 * np.power(lambda_term, 2)
 big_lambda = np.sqrt(lambda_interim)
 
 gamma_term = np.divide(1 + gamma, 1 - gamma)
-permeability = np.multiply(np.multiply(wavelength, big_lambda), gamma_term)
+wavelength_term = 1 / (np.sqrt(np.power(1/wavelength,2) - pow(1/cutoff_wavelength,2)))
+
+permeability = np.multiply(np.multiply(wavelength_term, big_lambda), gamma_term)
 
 epsterm1 = np.divide(np.square(wavelength), permeability)
-epsterm2 = np.subtract(1 / pow(cutoff_wavelength, 2), lambda_interim)
+epsterm2 = np.add(1 / pow(cutoff_wavelength, 2), lambda_interim)
 
 eps = np.multiply(epsterm1, epsterm2)
 
@@ -97,8 +99,12 @@ fig, ax = plt.subplots()
 
 #plt.style.use('_mpl-gallery')
 ax.plot(np.real(air_matrix[:,0]), np.real(eps), linewidth=2.0)
-ax.plot(np.real(air_matrix[:,0]), s11_mut, linewidth=2.0)
-ax.plot(np.real(air_matrix[:,0]), s21_mut, linewidth=2.0)
+#ax.plot(np.real(air_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
+plt.xlabel("Frequency (GHz)")
+plt.ylabel("ε_r")
+plt.title("NT_Sample2")
+
+plt.grid()
 plt.show()
 
 
