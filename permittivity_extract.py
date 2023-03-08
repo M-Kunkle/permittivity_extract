@@ -4,18 +4,54 @@ Created on Wed Mar  1 19:17:32 2023
 
 Used for the purpose of extracting permittivity results from measured sample
 data. Measured data of MUT and air and metal to collect the proper S-Parameter (SP)
-matrix. Proper SP matrix is then fed through a Nicholson-Ross method to determine
+matrix. Proper SP matrix is then fed through a Nicholson-Ross-Weir method to determine
 the complex permittivity.
 
 Data Input:
     L_Matrix = SP matrix of airline with only air inside.
     T_Matrix = SP matrix of airline with the actual MUT inside.
     M_Matrix = SP matrix of airline with identical sample size but made of metal.
+    
+    d = length of sample
+    f = frequency of given point
 
-Calibration Equations:
+Airline Calibration Equations:
     S11_MUT = -1 * G[T11 - L11] / G[M11 - L11]
-    S21_MUT = G[T21] / G[L21]
+    
+    If metal sample is unavailable, the calculation can be ran without
+    but the accuracy will be slightly lowered, equation then becomes
+    
+    S11_MUT = G[T11 - L11]
 
+    S21_MUT = G[T21] / G[L21]
+    
+    Where G[x] is a timegate that is performed by using an inverse fourier
+    transform to convert to time domain and take only the first set of reflections.
+    
+    Once S11 and S21 have been calculated with airline calibration, they
+    are run through Nicholson-Ross-Weir method.
+
+Nicholson-Ross-Weir Equations:
+    
+    X = (S11^2 - S21^2 + 1) / (2 * S11)
+    
+    Gamma = X +- sqrt(X^2 - 1)
+    
+    Gamma value has a plus or minus, the value that is actually used is the
+    one that has a magnitude(Gamma) < 1
+    
+    T = (S11 + S21 - Gamma) / (1-(S11+S21)*Gamma)
+    
+    1 / V^2 = -(1/(2*pi*d) * ln (1/T))^2
+    
+    Permeability Mu_r is then calculated to be,
+    
+    Mu_r = (1 + Gamma) / (V * (1 - Gamma) * sqrt((1/w_0)^2 - (1/w_c)^2))
+    
+    Permittivity eps_r is then calculated to be,
+    
+    eps_r = (w_0^2/Mu_r) * ((1/w_c)^2 + 1/V^2)
+    
 References:
     1. A. M. Hassan, J. Obrzut and E. J. Garboczi, "A  Q  -Band Free-Space Characterization of 
     Carbon Nanotube Composites," in IEEE Transactions on Microwave Theory and Techniques, 
@@ -30,29 +66,135 @@ References:
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import csv
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import simpledialog
 
-sample_length = .00709
+# Creation of window for tkinter file dialogs
+root = tk.Tk()
+root.attributes('-alpha', 0.0)
+root.attributes('-topmost', True)
+root.withdraw()
+
+
+'''
+Conversion of S2P file of measured S-parameter data into matrices
+that can be used for data post processing
+'''
+freq = []
+s11_real = []
+s11_im = []
+s21_real = []
+s21_im = []
+s12_real = []
+s12_im = []
+s22_real = []
+s22_im = []
+
+# Selection of empty airline s2p file
+filepath = filedialog.askopenfilename(parent = root,title='Select Empty Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
+file = open(filepath, "r")
+
+# S2P file parsing
+for line in file:
+    curr_line = line.split()
+    if curr_line[0].replace('.', '', 1).isdigit():
+        freq.append(float(curr_line[0]))
+        s11_real.append(float(curr_line[1]))
+        s11_im.append(float(curr_line[2]))
+        s21_real.append(float(curr_line[3]))
+        s21_im.append(float(curr_line[4]))
+        s12_real.append(float(curr_line[5]))
+        s12_im.append(float(curr_line[6]))
+        s22_real.append(float(curr_line[7]))
+        s22_im.append(float(curr_line[8]))
+        
+file.close()
+
+# Filename for resulting CSV, which is passed into the program
+savepath_empty = filedialog.asksaveasfilename(defaultextension='.csv')
+with open(savepath_empty, 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile, dialect='excel')
+    writer.writerow(['Frequency', 'S11', 'S21', 'S12', 'S22'])
+    
+    for idx,line in enumerate(freq):
+        writer.writerow([freq[idx],
+                         str(s11_real[idx] + (s11_im[idx]*1j)), 
+                         str(s21_real[idx] + (s21_im[idx]*1j)),
+                         str(s12_real[idx] + (s12_im[idx]*1j)),
+                         str(s22_real[idx] + (s22_im[idx]*1j))])
+csvfile.close()
+
+''' 
+Repeat code for the material s2p file
+'''
+freq = []
+s11_real = []
+s11_im = []
+s21_real = []
+s21_im = []
+s12_real = []
+s12_im = []
+s22_real = []
+s22_im = []
+
+# Selection of empty airline s2p file
+filepath = filedialog.askopenfilename(title='Select MUT Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
+file = open(filepath, "r")
+
+# S2P file parsing
+for line in file:
+    curr_line = line.split()
+    if curr_line[0].replace('.', '', 1).isdigit():
+        freq.append(float(curr_line[0]))
+        s11_real.append(float(curr_line[1]))
+        s11_im.append(float(curr_line[2]))
+        s21_real.append(float(curr_line[3]))
+        s21_im.append(float(curr_line[4]))
+        s12_real.append(float(curr_line[5]))
+        s12_im.append(float(curr_line[6]))
+        s22_real.append(float(curr_line[7]))
+        s22_im.append(float(curr_line[8]))
+        
+file.close()
+
+# Filename for resulting CSV, which is passed into the program
+savepath_mut = filedialog.asksaveasfilename(defaultextension='.csv')
+with open(savepath_mut, 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile, dialect='excel')
+    writer.writerow(['Frequency', 'S11', 'S21', 'S12', 'S22'])
+    
+    for idx,line in enumerate(freq):
+        writer.writerow([freq[idx],
+                         str(s11_real[idx] + (s11_im[idx]*1j)), 
+                         str(s21_real[idx] + (s21_im[idx]*1j)),
+                         str(s12_real[idx] + (s12_im[idx]*1j)),
+                         str(s22_real[idx] + (s22_im[idx]*1j))])
+csvfile.close()
+
 # Load sample data as matrices
-
-
 air_matrix = np.genfromtxt(
-    'Empty_0,8-4,0.csv', 
+    savepath_empty, 
     delimiter=',', 
     skip_header=1,
     dtype=complex, 
-    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(3)}
-)
-#metal_matrix = np.loadtxt(open("test.csv", "rb"), delimiter=",", skiprows=1)
-mut_matrix = np.genfromtxt(
-    'NT_Sample2_7.09mm,8-4,0.csv', 
-    delimiter=',', 
-    skip_header=1,
-    dtype=complex, 
-    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(3)}
+    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
 )
 
-cutoff_wavelength = .3747
+mut_matrix = np.genfromtxt(
+    savepath_mut, 
+    delimiter=',', 
+    skip_header=1,
+    dtype=complex, 
+    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
+)
+
+# Constants to be used for the calculation
 c = 299792458
+sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in mm:")
+cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
+cutoff_wavelength = c / (cutoff_frequency * pow(10,9))
 wavelength = c / (air_matrix[:,0] * pow(10,9))
 beta = np.divide(2*math.pi, wavelength)
 
@@ -106,5 +248,3 @@ plt.title("NT_Sample2")
 
 plt.grid()
 plt.show()
-
-

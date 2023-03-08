@@ -52,7 +52,7 @@ def main():
         writer.writerow(['Frequency', 'S11', 'S21'])
         
         for idx,line in enumerate(freq):
-            writer.writerow([freq[idx], str(s11_real[idx] + (s11_im[idx] * 1j)), str(s11_real[idx] + (s11_im[idx]*1j))])
+            writer.writerow([freq[idx], str(s11_real[idx] + (s11_im[idx] * 1j)), str(s21_real[idx] + (s21_im[idx]*1j))])
         
     csvfile.close()
     
