@@ -57,7 +57,9 @@ References:
     Carbon Nanotube Composites," in IEEE Transactions on Microwave Theory and Techniques, 
     vol. 64, no. 11, pp. 3807-3819, Nov. 2016, doi: 10.1109/TMTT.2016.2603500.
     
-    2. Nicholson Ross reference
+    2. A. M. Nicolson and G. F. Ross, "Measurement of the Intrinsic Properties of Materials by
+    Time-Domain Techniques," in IEEE Transactions on Instrumentation and Measurement,
+    vol. 19, no. 4, pp. 377-382, Nov. 1970, doi: 10.1109/TIM.1970.4313932.
         
         
 @author: M. Kunkle
