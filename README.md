@@ -9,6 +9,7 @@ matrix. Proper SP matrix is then fed through a Nicholson-Ross-Weir method to det
 the complex permittivity.
 
 Data Input:
+
     L_Matrix = SP matrix of airline with only air inside.
     T_Matrix = SP matrix of airline with the actual MUT inside.
     M_Matrix = SP matrix of airline with identical sample size but made of metal.
@@ -17,6 +18,7 @@ Data Input:
     f = frequency of given point
 
 Airline Calibration Equations:
+
     S11_MUT = -1 * G[T11 - L11] / G[M11 - L11]
     
     If metal sample is unavailable, the calculation can be ran without
@@ -54,6 +56,7 @@ Nicholson-Ross-Weir Equations:
     eps_r = (w_0^2/Mu_r) * ((1/w_c)^2 + 1/V^2)
     
 References:
+
     1. A. M. Hassan, J. Obrzut and E. J. Garboczi, "A  Q  -Band Free-Space Characterization of 
     Carbon Nanotube Composites," in IEEE Transactions on Microwave Theory and Techniques, 
     vol. 64, no. 11, pp. 3807-3819, Nov. 2016, doi: 10.1109/TMTT.2016.2603500.
