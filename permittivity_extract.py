@@ -16,6 +16,14 @@ Data Input:
     f = frequency of given point
 
 Airline Calibration Equations:
+    
+    Test setup requires a material machined into a hollow cylinder with inner
+    dimension of the cylinder being the size of the center conductor pin. The 
+    outside cylinder radius should fill the airline as much as possible. The 
+    length of the sample is ideally the full length of the airline, but if the 
+    sample does not fill the airline, it must be completely as centered inside
+    the airline, with equal amounts of air on either side.
+    
     S11_MUT = -1 * G[T11 - L11] / G[M11 - L11]
     
     If metal sample is unavailable, the calculation can be ran without
@@ -23,7 +31,10 @@ Airline Calibration Equations:
     
     S11_MUT = G[T11 - L11]
 
-    S21_MUT = G[T21] / G[L21]
+    S21_MUT = (G[T21] / G[L21]) * e^(-jBd)
+    
+    The exponential term on the end of the S21 normalization is used to account
+    for the phase delay that occurs when the wave is passed through the dielectric.
     
     Where G[x] is a timegate that is performed by using an inverse fourier
     transform to convert to time domain and take only the first set of reflections.
@@ -194,48 +205,63 @@ mut_matrix = np.genfromtxt(
 
 # Constants to be used for the calculation
 c = 299792458
-sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in mm:")
+sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
 cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
 cutoff_wavelength = c / (cutoff_frequency * pow(10,9))
 wavelength = c / (air_matrix[:,0] * pow(10,9))
 beta = np.divide(2*math.pi, wavelength)
 
-# Cycle through entirety of matrices, calculations are done elementwise at each
-# specific frequency point that has been measured.
+'''
+Cycle through entirety of matrices, calculations are done elementwise at each
+specific frequency point that has been measured.
+'''
+
+
+'''
+Airline calibration:
+'''
 
 s11_mut = np.subtract(mut_matrix[:,1], air_matrix[:,1])
 #s11_denom = np.subtract(metal_matrix[1], air_matrix[1])
 #s11_mut = -1 * np.divide(s11_numer[1], s11_denom[1])
 
+# normalization factor split up into two separate terms
 s21_normalize = np.divide(mut_matrix[:,2], air_matrix[:,2])
 delay_term = np.exp(-1j*sample_length*beta)
 s21_mut = np.multiply(s21_normalize, delay_term)
 
+'''
+Nicholson-Ross-Weir Calculations
+'''
+
+# X = (S11^2 - S21^2 + 1) / (2 * S11)
 X_numer = 1 - (np.square(s21_mut) - np.square(s11_mut))
 X = np.divide(X_numer, np.multiply(2, s11_mut))
 
-
+# Gamma = X +- sqrt(X^2 - 1)
 gamma1 = np.abs(np.add(X, np.sqrt(np.subtract(np.square(X),1))))
 gamma2 = np.abs(np.subtract(X, np.sqrt(np.subtract(np.square(X),1))))
-
 gamma = np.where(gamma1 < 1, np.add(X, np.sqrt(np.subtract(np.square(X),1))), np.subtract(X, np.sqrt(np.subtract(np.square(X),1))))
 
+
+# T = (S11 + S21 - Gamma) / (1-(S11+S21)*Gamma)
 T_numer = s11_mut + s21_mut - gamma
 T_denom = 1 - np.multiply(gamma,(s11_mut + s21_mut))
 T = np.divide(T_numer, T_denom)
 
+# 1 / V^2 = -(1/(2*pi*d) * ln (1/T))^2
 lambda_term = -1 * np.multiply(1 / (2*math.pi*sample_length), np.log(np.divide(1,T)))
 lambda_interim = -1 * np.power(lambda_term, 2)
 big_lambda = np.sqrt(lambda_interim)
 
+# Mu_r = (1 + Gamma) / (V * (1 - Gamma) * sqrt((1/w_0)^2 - (1/w_c)^2))
 gamma_term = np.divide(1 + gamma, 1 - gamma)
 wavelength_term = 1 / (np.sqrt(np.power(1/wavelength,2) - pow(1/cutoff_wavelength,2)))
-
 permeability = np.multiply(np.multiply(wavelength_term, big_lambda), gamma_term)
 
+# eps_r = (w_0^2/Mu_r) * ((1/w_c)^2 + 1/V^2)
 epsterm1 = np.divide(np.square(wavelength), permeability)
 epsterm2 = np.add(1 / pow(cutoff_wavelength, 2), lambda_interim)
-
 eps = np.multiply(epsterm1, epsterm2)
 
 # plot
