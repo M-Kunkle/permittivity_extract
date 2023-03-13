@@ -93,6 +93,7 @@ root.withdraw()
 
 np.seterr(divide='ignore', invalid='ignore')
 
+air_cal_dialog = messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
 data_format = messagebox.askyesno(title="Data Format Selection", message="Is your data formatted into an s2p file?")
 
 if(data_format):
@@ -100,49 +101,50 @@ if(data_format):
     Conversion of S2P file of measured S-parameter data into matrices
     that can be used for data post processing
     '''
-    freq = []
-    s11_real = []
-    s11_im = []
-    s21_real = []
-    s21_im = []
-    s12_real = []
-    s12_im = []
-    s22_real = []
-    s22_im = []
-    
-    # Selection of empty airline s2p file
-    filepath = filedialog.askopenfilename(parent = root,title='Select Empty Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
-    file = open(filepath, "r")
-    
-    # S2P file parsing
-    for line in file:
-        curr_line = line.split()
-        if curr_line[0].replace('.', '', 1).isdigit():
-            freq.append(float(curr_line[0]))
-            s11_real.append(float(curr_line[1]))
-            s11_im.append(float(curr_line[2]))
-            s21_real.append(float(curr_line[3]))
-            s21_im.append(float(curr_line[4]))
-            s12_real.append(float(curr_line[5]))
-            s12_im.append(float(curr_line[6]))
-            s22_real.append(float(curr_line[7]))
-            s22_im.append(float(curr_line[8]))
-            
-    file.close()
-    
-    # Filename for resulting CSV, which is passed into the program
-    savepath_empty = filedialog.asksaveasfilename(defaultextension='.csv')
-    with open(savepath_empty, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, dialect='excel')
-        writer.writerow(['Frequency', 'S11', 'S21', 'S12', 'S22'])
+    if(air_cal_dialog):
+        freq = []
+        s11_real = []
+        s11_im = []
+        s21_real = []
+        s21_im = []
+        s12_real = []
+        s12_im = []
+        s22_real = []
+        s22_im = []
         
-        for idx,line in enumerate(freq):
-            writer.writerow([freq[idx],
-                             str(s11_real[idx] + (s11_im[idx]*1j)), 
-                             str(s21_real[idx] + (s21_im[idx]*1j)),
-                             str(s12_real[idx] + (s12_im[idx]*1j)),
-                             str(s22_real[idx] + (s22_im[idx]*1j))])
-    csvfile.close()
+        # Selection of empty airline s2p file
+        filepath = filedialog.askopenfilename(parent = root,title='Select Empty Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
+        file = open(filepath, "r")
+        
+        # S2P file parsing
+        for line in file:
+            curr_line = line.split()
+            if curr_line[0].replace('.', '', 1).isdigit():
+                freq.append(float(curr_line[0]))
+                s11_real.append(float(curr_line[1]))
+                s11_im.append(float(curr_line[2]))
+                s21_real.append(float(curr_line[3]))
+                s21_im.append(float(curr_line[4]))
+                s12_real.append(float(curr_line[5]))
+                s12_im.append(float(curr_line[6]))
+                s22_real.append(float(curr_line[7]))
+                s22_im.append(float(curr_line[8]))
+                
+        file.close()
+        
+        # Filename for resulting CSV, which is passed into the program
+        savepath_empty = filedialog.asksaveasfilename(defaultextension='.csv')
+        with open(savepath_empty, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, dialect='excel')
+            writer.writerow(['Frequency', 'S11', 'S21', 'S12', 'S22'])
+            
+            for idx,line in enumerate(freq):
+                writer.writerow([freq[idx],
+                                 str(s11_real[idx] + (s11_im[idx]*1j)), 
+                                 str(s21_real[idx] + (s21_im[idx]*1j)),
+                                 str(s12_real[idx] + (s12_im[idx]*1j)),
+                                 str(s22_real[idx] + (s22_im[idx]*1j))])
+        csvfile.close()
     
     ''' 
     Repeat code for the material s2p file
@@ -192,22 +194,24 @@ if(data_format):
     csvfile.close()
     
 else:
-    savepath_empty = filedialog.askopenfilename(title="Select Empty Airline Data CSV", filetypes=[("Comma Separated Values", '*.csv')])
+    if(air_cal_dialog):
+        savepath_empty = filedialog.askopenfilename(title="Select Empty Airline Data CSV", filetypes=[("Comma Separated Values", '*.csv')])
     savepath_mut = filedialog.askopenfilename(title="Select MUT Airline Data CSV", filetypes=[("Comma Separated Values", '*.csv')])
 
-# Load sample data as matrices
-air_matrix = np.genfromtxt(
-    savepath_empty, 
-    delimiter=',', 
-    skip_header=2,
-    dtype=complex, 
-    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
-)
+if(air_cal_dialog):
+    # Load sample data as matrices
+    air_matrix = np.genfromtxt(
+        savepath_empty, 
+        delimiter=',', 
+        skip_header=1,
+        dtype=complex, 
+        converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
+    )
 
 mut_matrix = np.genfromtxt(
     savepath_mut, 
     delimiter=',', 
-    skip_header=2,
+    skip_header=1,
     dtype=complex, 
     converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
 )
@@ -217,7 +221,7 @@ c = 299792458
 sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
 cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
 cutoff_wavelength = c / (cutoff_frequency * pow(10,9))
-wavelength = c / (air_matrix[:,0] * pow(10,9))
+wavelength = c / (mut_matrix[:,0] * pow(10,9))
 beta = np.divide(2*math.pi, wavelength)
 
 '''
@@ -225,19 +229,22 @@ Cycle through entirety of matrices, calculations are done elementwise at each
 specific frequency point that has been measured.
 '''
 
-
-'''
-Airline calibration:
-'''
-
-s11_mut = np.subtract(mut_matrix[:,1], air_matrix[:,1])
-#s11_denom = np.subtract(metal_matrix[1], air_matrix[1])
-#s11_mut = -1 * np.divide(s11_numer[1], s11_denom[1])
-
-# normalization factor split up into two separate terms
-s21_normalize = np.divide(mut_matrix[:,2], air_matrix[:,2])
-delay_term = np.exp(-1j*sample_length*beta)
-s21_mut = np.multiply(s21_normalize, delay_term)
+if(air_cal_dialog):
+    '''
+    Airline calibration:
+    '''
+    
+    s11_mut = np.subtract(mut_matrix[:,1], air_matrix[:,1])
+    #s11_denom = np.subtract(metal_matrix[1], air_matrix[1])
+    #s11_mut = -1 * np.divide(s11_numer[1], s11_denom[1])
+    
+    # normalization factor split up into two separate terms
+    s21_normalize = np.divide(mut_matrix[:,2], air_matrix[:,2])
+    delay_term = np.exp(-1j*sample_length*beta)
+    s21_mut = np.multiply(s21_normalize, delay_term)
+else: 
+    s11_mut = mut_matrix[:,1]
+    s21_mut = mut_matrix[:,2]
 
 '''
 Nicholson-Ross-Weir Calculations
@@ -277,11 +284,10 @@ eps = np.multiply(epsterm1, epsterm2)
 fig, ax = plt.subplots()
 
 #plt.style.use('_mpl-gallery')
-ax.plot(np.real(air_matrix[:,0]), np.real(eps), linewidth=2.0)
-ax.plot(np.real(air_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
+ax.plot(np.real(mut_matrix[:,0]), np.real(eps), linewidth=2.0)
+#ax.plot(np.real(mut_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
 plt.xlabel("Frequency (GHz)")
 plt.ylabel("ε_r")
-plt.title("NT_Sample2")
-
+plt.ylim([-1,10])
 plt.grid()
 plt.show()
