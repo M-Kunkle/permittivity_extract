@@ -95,6 +95,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 air_cal_dialog = messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
 data_format = messagebox.askyesno(title="Data Format Selection", message="Is your data formatted into an s2p file?")
+gate_dialog = messagebox.askyesno(title="Time Gating Selection", message="Apply time gating to S-Parameters?")
 
 if(data_format):
     '''
@@ -216,6 +217,22 @@ mut_matrix = np.genfromtxt(
     converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
 )
 
+if(gate_dialog):
+    # plot
+    fig, ax = plt.subplots()
+    ax.plot(np.real(mut_matrix[:,0]), 20*np.log10(abs(mut_matrix[:,1])), linewidth=2.0)
+    plt.xlabel("Frequency (GHz)")
+    plt.ylabel("S11")
+    plt.grid(visible=True, axis='both')
+    plt.show()
+    
+    fig2, ax2 = plt.subplots()
+    ax2.plot(np.fft.ifft(mut_matrix[:,0]), np.fft.ifft(mut_matrix[:,1]), linewidth=2.0)
+    plt.xlabel("Frequency (GHz)")
+    plt.ylabel("S11")
+    plt.grid(visible=True, axis='both')
+    plt.show()
+
 # Constants to be used for the calculation
 c = 299792458
 sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
@@ -282,12 +299,10 @@ eps = np.multiply(epsterm1, epsterm2)
 
 # plot
 fig, ax = plt.subplots()
-
-#plt.style.use('_mpl-gallery')
 ax.plot(np.real(mut_matrix[:,0]), np.real(eps), linewidth=2.0)
 #ax.plot(np.real(mut_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
 plt.xlabel("Frequency (GHz)")
 plt.ylabel("ε_r")
 plt.ylim([-1,10])
-plt.grid()
+plt.grid(visible=True, axis='both')
 plt.show()
