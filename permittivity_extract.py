@@ -206,7 +206,7 @@ if(air_cal_dialog):
         delimiter=',', 
         skip_header=1,
         dtype=complex, 
-        converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
+        converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(3)}
     )
 
 mut_matrix = np.genfromtxt(
@@ -214,7 +214,7 @@ mut_matrix = np.genfromtxt(
     delimiter=',', 
     skip_header=1,
     dtype=complex, 
-    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(5)}
+    converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(3)}
 )
 
 if(gate_dialog):
@@ -227,7 +227,7 @@ if(gate_dialog):
     plt.show()
     
     fig2, ax2 = plt.subplots()
-    ax2.plot(np.fft.ifft(mut_matrix[:,0]), np.fft.ifft(mut_matrix[:,1]), linewidth=2.0)
+    ax2.plot(np.arange(), np.fft.ifft(mut_matrix[:,1]), linewidth=2.0)
     plt.xlabel("Frequency (GHz)")
     plt.ylabel("S11")
     plt.grid(visible=True, axis='both')
@@ -238,7 +238,7 @@ c = 299792458
 sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
 cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
 cutoff_wavelength = c / (cutoff_frequency * pow(10,9))
-wavelength = c / (mut_matrix[:,0] * pow(10,9))
+wavelength = c / mut_matrix[:,0]
 beta = np.divide(2*math.pi, wavelength)
 
 '''
@@ -303,6 +303,5 @@ ax.plot(np.real(mut_matrix[:,0]), np.real(eps), linewidth=2.0)
 #ax.plot(np.real(mut_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
 plt.xlabel("Frequency (GHz)")
 plt.ylabel("ε_r")
-plt.ylim([-1,10])
 plt.grid(visible=True, axis='both')
 plt.show()
