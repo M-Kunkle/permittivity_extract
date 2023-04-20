@@ -122,14 +122,14 @@ if(data_format):
             curr_line = line.split()
             if curr_line[0].replace('.', '', 1).isdigit():
                 freq.append(float(curr_line[0]))
-                s11_real.append(float(curr_line[1]))
-                s11_im.append(float(curr_line[2]))
-                s21_real.append(float(curr_line[3]))
-                s21_im.append(float(curr_line[4]))
-                s12_real.append(float(curr_line[5]))
-                s12_im.append(float(curr_line[6]))
-                s22_real.append(float(curr_line[7]))
-                s22_im.append(float(curr_line[8]))
+                s11_real.append(float(curr_line[1])*np.cos(float(curr_line[2])))
+                s11_im.append(float(curr_line[1])*np.sin(float(curr_line[2])))
+                s21_real.append(float(curr_line[3])*np.cos(float(curr_line[4])))
+                s21_im.append(float(curr_line[3])*np.sin(float(curr_line[4])))
+                s12_real.append(float(curr_line[5])*np.cos(float(curr_line[6])))
+                s12_im.append(float(curr_line[5])*np.sin(float(curr_line[6])))
+                s22_real.append(float(curr_line[7])*np.cos(float(curr_line[8])))
+                s22_im.append(float(curr_line[7])*np.cos(float(curr_line[8])))
                 
         file.close()
         
@@ -169,14 +169,14 @@ if(data_format):
         curr_line = line.split()
         if curr_line[0].replace('.', '', 1).isdigit():
             freq.append(float(curr_line[0]))
-            s11_real.append(float(curr_line[1]))
-            s11_im.append(float(curr_line[2]))
-            s21_real.append(float(curr_line[3]))
-            s21_im.append(float(curr_line[4]))
-            s12_real.append(float(curr_line[5]))
-            s12_im.append(float(curr_line[6]))
-            s22_real.append(float(curr_line[7]))
-            s22_im.append(float(curr_line[8]))
+            s11_real.append(float(curr_line[1])*np.cos(float(curr_line[2])))
+            s11_im.append(float(curr_line[1])*np.sin(float(curr_line[2])))
+            s21_real.append(float(curr_line[3])*np.cos(float(curr_line[4])))
+            s21_im.append(float(curr_line[3])*np.sin(float(curr_line[4])))
+            s12_real.append(float(curr_line[5])*np.cos(float(curr_line[6])))
+            s12_im.append(float(curr_line[5])*np.sin(float(curr_line[6])))
+            s22_real.append(float(curr_line[7])*np.cos(float(curr_line[8])))
+            s22_im.append(float(curr_line[7])*np.cos(float(curr_line[8])))
             
     file.close()
     
@@ -236,9 +236,11 @@ if(gate_dialog):
 # Constants to be used for the calculation
 c = 299792458
 sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
-cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
-cutoff_wavelength = c / (cutoff_frequency * pow(10,9))
-wavelength = c / mut_matrix[:,0]
+#cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
+#cutoff_wavelength = c / (cutoff_frequency * pow(10,9))
+freq = np.real(mut_matrix[:,0])*1e9
+wavelength = c / freq
+
 beta = np.divide(2*math.pi, wavelength)
 
 '''
@@ -282,24 +284,29 @@ T_numer = s11_mut + s21_mut - gamma
 T_denom = 1 - np.multiply(gamma,(s11_mut + s21_mut))
 T = np.divide(T_numer, T_denom)
 
-# 1 / V^2 = -(1/(2*pi*d) * ln (1/T))^2
-lambda_term = -1 * np.multiply(1 / (2*math.pi*sample_length), np.log(np.divide(1,T)))
-lambda_interim = -1 * np.power(lambda_term, 2)
-big_lambda = np.sqrt(lambda_interim)
+z_top = np.subtract(np.square(np.add(1, s11_mut)), np.square(s21_mut))
+z_bottom = np.subtract(np.square(np.subtract(1, s11_mut)), np.square(s21_mut))
+z = np.sqrt(np.divide(z_top, z_bottom))
 
-# Mu_r = (1 + Gamma) / (V * (1 - Gamma) * sqrt((1/w_0)^2 - (1/w_c)^2))
-gamma_term = np.divide(1 + gamma, 1 - gamma)
-wavelength_term = 1 / (np.sqrt(np.power(1/wavelength,2) - pow(1/cutoff_wavelength,2)))
-permeability = np.multiply(np.multiply(wavelength_term, big_lambda), gamma_term)
+delay_term1_top = np.add(np.subtract(1, np.square(s11_mut)), np.square(s21_mut))
+delay_term1_bot = np.multiply(2, s21_mut)
+delay_term1 = np.divide(delay_term1_top, delay_term1_bot)
+delay_term2_top = np.multiply(2,s11_mut)
+delay_term2_bot = np.multiply(s21_mut, np.subtract(z, np.divide(1,z)))
+delay_term2 = np.divide(delay_term2_top, delay_term2_bot)
+delay_term = np.add(delay_term1, delay_term2)                         
 
-# eps_r = (w_0^2/Mu_r) * ((1/w_c)^2 + 1/V^2)
-epsterm1 = np.divide(np.square(wavelength), permeability)
-epsterm2 = np.add(1 / pow(cutoff_wavelength, 2), lambda_interim)
-eps = np.multiply(epsterm1, epsterm2)
+ln_delay_term1 = np.log(np.absolute(delay_term))
+ln_delay_term2 = np.multiply(1j, np.angle(delay_term))
+ln_delay = np.add(ln_delay_term1, ln_delay_term2)
+
+
+eps_inside = np.add(np.multiply(np.divide(c,np.multiply(freq*2*3.14159,sample_length)), ln_delay), ln_delay_term2)
+eps = -np.square(eps_inside)
 
 # plot
 fig, ax = plt.subplots()
-ax.plot(np.real(mut_matrix[:,0]), np.real(eps), linewidth=2.0)
+ax.plot(freq, np.real(eps), linewidth=2.0)
 #ax.plot(np.real(mut_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
 plt.xlabel("Frequency (GHz)")
 plt.ylabel("ε_r")
