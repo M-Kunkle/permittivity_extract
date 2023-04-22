@@ -122,15 +122,14 @@ if(data_format):
             curr_line = line.split()
             if curr_line[0].replace('.', '', 1).isdigit():
                 freq.append(float(curr_line[0]))
-                s11_real.append(float(curr_line[1])*np.cos(float(curr_line[2])))
-                s11_im.append(float(curr_line[1])*np.sin(float(curr_line[2])))
-                s21_real.append(float(curr_line[3])*np.cos(float(curr_line[4])))
-                s21_im.append(float(curr_line[3])*np.sin(float(curr_line[4])))
-                s12_real.append(float(curr_line[5])*np.cos(float(curr_line[6])))
-                s12_im.append(float(curr_line[5])*np.sin(float(curr_line[6])))
-                s22_real.append(float(curr_line[7])*np.cos(float(curr_line[8])))
-                s22_im.append(float(curr_line[7])*np.cos(float(curr_line[8])))
-                
+                s11_real.append(float(curr_line[1])*math.cos((math.pi*float(curr_line[2]))/180))
+                s11_im.append(float(curr_line[1])*math.sin((math.pi*float(curr_line[2]))/180))
+                s21_real.append(float(curr_line[3])*math.cos((math.pi*float(curr_line[4]))/180))
+                s21_im.append(float(curr_line[3])*math.sin((math.pi*float(curr_line[4]))/180))
+                s12_real.append(float(curr_line[5])*math.cos((math.pi*float(curr_line[6]))/180))
+                s12_im.append(float(curr_line[5])*math.sin((math.pi*float(curr_line[6]))/180))
+                s22_real.append(float(curr_line[7])*math.cos((math.pi*float(curr_line[8]))/180))
+                s22_im.append(float(curr_line[7])*math.sin((math.pi*float(curr_line[8]))/180))
         file.close()
         
         # Filename for resulting CSV, which is passed into the program
@@ -169,14 +168,14 @@ if(data_format):
         curr_line = line.split()
         if curr_line[0].replace('.', '', 1).isdigit():
             freq.append(float(curr_line[0]))
-            s11_real.append(float(curr_line[1])*np.cos(float(curr_line[2])))
-            s11_im.append(float(curr_line[1])*np.sin(float(curr_line[2])))
-            s21_real.append(float(curr_line[3])*np.cos(float(curr_line[4])))
-            s21_im.append(float(curr_line[3])*np.sin(float(curr_line[4])))
-            s12_real.append(float(curr_line[5])*np.cos(float(curr_line[6])))
-            s12_im.append(float(curr_line[5])*np.sin(float(curr_line[6])))
-            s22_real.append(float(curr_line[7])*np.cos(float(curr_line[8])))
-            s22_im.append(float(curr_line[7])*np.cos(float(curr_line[8])))
+            s11_real.append(float(curr_line[1])*math.cos((math.pi*float(curr_line[2]))/180))
+            s11_im.append(float(curr_line[1])*math.sin((math.pi*float(curr_line[2]))/180))
+            s21_real.append(float(curr_line[3])*math.cos((math.pi*float(curr_line[4]))/180))
+            s21_im.append(float(curr_line[3])*math.sin((math.pi*float(curr_line[4]))/180))
+            s12_real.append(float(curr_line[5])*math.cos((math.pi*float(curr_line[6]))/180))
+            s12_im.append(float(curr_line[5])*math.sin((math.pi*float(curr_line[6]))/180))
+            s22_real.append(float(curr_line[7])*math.cos((math.pi*float(curr_line[8]))/180))
+            s22_im.append(float(curr_line[7])*math.sin((math.pi*float(curr_line[8]))/180))
             
     file.close()
     
@@ -300,9 +299,24 @@ ln_delay_term1 = np.log(np.absolute(delay_term))
 ln_delay_term2 = np.multiply(1j, np.angle(delay_term))
 ln_delay = np.add(ln_delay_term1, ln_delay_term2)
 
+inv_lambda_sq = np.multiply(np.square(np.multiply(1 / (2 * math.pi * sample_length), ln_delay)), -1)
+inv_lambda = np.sqrt(inv_lambda_sq)
 
-eps_inside = np.add(np.multiply(np.divide(c,np.multiply(freq*2*3.14159,sample_length)), ln_delay), ln_delay_term2)
-eps = -np.square(eps_inside)
+gam_term = np.divide(np.add(1, gamma), np.subtract(1, gamma))
+#wave_term = np.divide(1,np.sqrt(np.subtract(np.divide(1, np.square(wavelength)), np.divide(1, np.square(cutoff_wavelength)))))
+wave_term = wavelength
+
+
+mu = np.multiply(np.multiply(inv_lambda, gam_term), wave_term)
+
+eps_term1 = np.divide(np.square(wavelength),mu)
+#eps = np.multiply(eps_term1, np.add(np.divide(1,np.square(cutoff_wavelength)),inv_lambda_sq))
+eps = np.multiply(eps_term1, inv_lambda_sq)
+
+
+# eps_inside1 = np.divide(c, np.multiply(freq,2*math.pi*sample_length))
+# eps_inside = np.add(np.multiply(ln_delay_term1, eps_inside1), ln_delay_term2)
+# eps = -np.square(eps_inside)
 
 # plot
 fig, ax = plt.subplots()
@@ -310,5 +324,13 @@ ax.plot(freq, np.real(eps), linewidth=2.0)
 #ax.plot(np.real(mut_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
 plt.xlabel("Frequency (GHz)")
 plt.ylabel("ε_r")
+plt.grid(visible=True, axis='both')
+plt.show()
+
+fig, ax = plt.subplots()
+#ax.plot(freq, np.real(eps), linewidth=2.0)
+ax.plot(np.real(mut_matrix[:,0]), -np.imag(eps) / np.real(eps), linewidth=2.0)
+plt.xlabel("Frequency (GHz)")
+plt.ylabel("loss tangent")
 plt.grid(visible=True, axis='both')
 plt.show()
