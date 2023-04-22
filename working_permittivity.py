@@ -46,22 +46,22 @@ Nicholson-Ross-Weir Equations:
     
     X = (S11^2 - S21^2 + 1) / (2 * S11)
     
-    Γ = X +- sqrt(X^2 - 1)
+    Gamma = X +- sqrt(X^2 - 1)
     
-    Γ value has a plus or minus, the value that is actually used is the
-    one that has a magnitude(Γ) < 1
+    Gamma value has a plus or minus, the value that is actually used is the
+    one that has a magnitude(Gamma) < 1
     
-    T = (S11 + S21 - Γ) / (1-(S11+S21)*Γ)
+    T = (S11 + S21 - Gamma) / (1-(S11+S21)*Gamma)
     
-    1 / Λ ^2 = -(1/(2*pi*d) * ln (1/T))^2
+    1 / V^2 = -(1/(2*pi*d) * ln (1/T))^2
     
-    Permeability, μ_r, is then calculated to be,
+    Permeability Mu_r is then calculated to be,
     
-    μ_r = (1 + Γ) / (Λ * (1 - Γ) * sqrt((1/ω_0)^2 - (1/ω_c)^2))
+    Mu_r = (1 + Gamma) / (V * (1 - Gamma) * sqrt((1/w_0)^2 - (1/w_c)^2))
     
-    Permittivity ε_r is then calculated to be,
+    Permittivity eps_r is then calculated to be,
     
-    ε_r = (ω_0^2 / μ_r) * ((1 / ω_c)^2 + 1 / Λ^2)
+    eps_r = (w_0^2/Mu_r) * ((1/w_c)^2 + 1/V^2)
     
 References:
     1. A. M. Hassan, J. Obrzut and E. J. Garboczi, "A  Q  -Band Free-Space Characterization of 
@@ -236,11 +236,11 @@ if(gate_dialog):
 c = 299792458
 sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
 #cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
-#cutoff_λ = c / (cutoff_frequency * pow(10,9))
-freq = np.real(mut_matrix[:,0])*1e9
-λ = c / freq
-beta = np.divide(2*math.pi, λ)
+#cutoff_wavelength = c / (cutoff_frequency * pow(10,9))
+freq = np.real(mut_matrix[:,0])
+wavelength = c / freq
 
+beta = np.divide(2*math.pi, wavelength)
 
 '''
 Cycle through entirety of matrices, calculations are done elementwise at each
@@ -269,47 +269,67 @@ Nicholson-Ross-Weir Calculations
 '''
 
 # X = (S11^2 - S21^2 + 1) / (2 * S11)
-X = (1 - np.square(s21_mut) + np.square(s11_mut)) / (2 * s11_mut)
+X_numer = 1 - (np.square(s21_mut) - np.square(s11_mut))
+X = np.divide(X_numer, np.multiply(2, s11_mut))
 
-# Γ = X +- sqrt(X^2 - 1)
-Γ_1 = X + np.sqrt(np.square(X) - 1)
-Γ_2 = X - np.sqrt(np.square(X) - 1)
-Γ = np.where(np.abs(Γ_1) < 1, Γ_1, Γ_2)
+# Gamma = X +- sqrt(X^2 - 1)
+gamma1 = np.abs(np.add(X, np.sqrt(np.subtract(np.square(X),1))))
+gamma2 = np.abs(np.subtract(X, np.sqrt(np.subtract(np.square(X),1))))
+gamma = np.where(gamma1 < 1, np.add(X, np.sqrt(np.subtract(np.square(X),1))), np.subtract(X, np.sqrt(np.subtract(np.square(X),1))))
 
-# T = (S11 + S21 - Γ) / (1-(S11+S21)*Γ)
-T = (s11_mut + s21_mut - Γ) / (1 - Γ * (s11_mut + s21_mut))
 
-# z = 
-z = np.sqrt((np.square(1 + s11_mut) - np.square(s21_mut)) / \
-            (np.square(1 - s11_mut) - np.square(s21_mut)))
+# T = (S11 + S21 - Gamma) / (1-(S11+S21)*Gamma)
+T_numer = s11_mut + s21_mut - gamma
+T_denom = 1 - np.multiply(gamma,(s11_mut + s21_mut))
+T = np.divide(T_numer, T_denom)
 
-# delay = e^(-*d)
-delay = (1 - np.square(s11_mut) + np.square(s21_mut)) / (2 * s21_mut) \
-        + (2 * s11_mut) / (s21_mut * (z - (1 / z)))  
+z_top = np.subtract(np.square(np.add(1, s11_mut)), np.square(s21_mut))
+z_bottom = np.subtract(np.square(np.subtract(1, s11_mut)), np.square(s21_mut))
+z = np.sqrt(np.divide(z_top, z_bottom))
 
-ln_delay = np.log(np.absolute(delay)) + 1j * np.angle(delay)
+delay_term1_top = np.add(np.subtract(1, np.square(s11_mut)), np.square(s21_mut))
+delay_term1_bot = np.multiply(2, s21_mut)
+delay_term1 = np.divide(delay_term1_top, delay_term1_bot)
+delay_term2_top = np.multiply(2,s11_mut)
+delay_term2_bot = np.multiply(s21_mut, np.subtract(z, np.divide(1,z)))
+delay_term2 = np.divide(delay_term2_top, delay_term2_bot)
+delay_term = np.add(delay_term1, delay_term2)                         
 
-inv_Λ_sq = np.multiply(np.square(np.multiply(1 / (2 * math.pi * sample_length), ln_delay)), -1)
-inv_Λ = np.sqrt(inv_Λ_sq)
+ln_delay_term1 = np.log(np.absolute(delay_term))
+ln_delay_term2 = np.multiply(1j, np.angle(delay_term))
+ln_delay = np.add(ln_delay_term1, ln_delay_term2)
 
-mu = inv_Λ * ((1 + Γ) / (1 - Γ)) * λ
+inv_lambda_sq = np.multiply(np.square(np.multiply(1 / (2 * math.pi * sample_length), ln_delay)), -1)
+inv_lambda = np.sqrt(inv_lambda_sq)
 
-ε_term1 = np.divide(np.square(λ),mu)
-ε = ε_term1 * inv_Λ_sq
+gam_term = np.divide(np.add(1, gamma), np.subtract(1, gamma))
+#wave_term = np.divide(1,np.sqrt(np.subtract(np.divide(1, np.square(wavelength)), np.divide(1, np.square(cutoff_wavelength)))))
+wave_term = wavelength
 
+
+mu = np.multiply(np.multiply(inv_lambda, gam_term), wave_term)
+
+eps_term1 = np.divide(np.square(wavelength),mu)
+#eps = np.multiply(eps_term1, np.add(np.divide(1,np.square(cutoff_wavelength)),inv_lambda_sq))
+eps = np.multiply(eps_term1, inv_lambda_sq)
+
+
+# eps_inside1 = np.divide(c, np.multiply(freq,2*math.pi*sample_length))
+# eps_inside = np.add(np.multiply(ln_delay_term1, eps_inside1), ln_delay_term2)
+# eps = -np.square(eps_inside)
 
 # plot
 fig, ax = plt.subplots()
-ax.plot(freq, np.real(ε), linewidth=2.0)
-#ax.plot(np.real(mut_matrix[:,0]), np.imag(ε) / np.real(ε), linewidth=2.0)
+ax.plot(freq, np.real(eps), linewidth=2.0)
+#ax.plot(np.real(mut_matrix[:,0]), np.imag(eps) / np.real(eps), linewidth=2.0)
 plt.xlabel("Frequency (GHz)")
 plt.ylabel("ε_r")
 plt.grid(visible=True, axis='both')
 plt.show()
 
 fig, ax = plt.subplots()
-#ax.plot(freq, np.real(ε), linewidth=2.0)
-ax.plot(np.real(mut_matrix[:,0]), -np.imag(ε) / np.real(ε), linewidth=2.0)
+#ax.plot(freq, np.real(eps), linewidth=2.0)
+ax.plot(np.real(mut_matrix[:,0]), -np.imag(eps) / np.real(eps), linewidth=2.0)
 plt.xlabel("Frequency (GHz)")
 plt.ylabel("loss tangent")
 plt.grid(visible=True, axis='both')
