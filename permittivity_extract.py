@@ -76,26 +76,36 @@ References:
 @author: M. Kunkle
 """
 
-import numpy as np
+import tkinter
+import matplotlib as plt
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.figure import Figure
 import math
-import matplotlib.pyplot as plt
 import csv
-import tkinter as tk
-from tkinter import filedialog
-from tkinter import simpledialog
-from tkinter import messagebox
+import numpy as np
 
-# Creation of window for tkinter file dialogs
-root = tk.Tk()
-root.attributes('-alpha', 0.0)
-root.attributes('-topmost', True)
-root.withdraw()
+#plt.style.use('fast')
+
+class GraphFrame(tkinter.Frame):
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self.fig = Figure(tight_layout=True)
+        self.ax = self.fig.add_subplot(111)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+        self.canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=True)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self)
+        self.toolbar.update()
+
+
+root = tkinter.Tk()
+root.wm_title("Material Characterization")
+root.geometry("+100+20")
 
 np.seterr(divide='ignore', invalid='ignore')
 
-air_cal_dialog = messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
-data_format = messagebox.askyesno(title="Data Format Selection", message="Is your data formatted into an s2p file?")
-gate_dialog = messagebox.askyesno(title="Time Gating Selection", message="Apply time gating to S-Parameters?")
+air_cal_dialog = tkinter.messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
+data_format = tkinter.messagebox.askyesno(title="Data Format Selection", message="Is your data formatted into an s2p file?")
+gate_dialog = tkinter.messagebox.askyesno(title="Time Gating Selection", message="Apply time gating to S-Parameters?")
 
 if(data_format):
     '''
@@ -114,7 +124,7 @@ if(data_format):
         s22_im = []
         
         # Selection of empty airline s2p file
-        filepath = filedialog.askopenfilename(parent = root,title='Select Empty Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
+        filepath = tkinter.filedialog.askopenfilename(parent = root,title='Select Empty Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
         file = open(filepath, "r")
         
         # S2P file parsing
@@ -133,7 +143,7 @@ if(data_format):
         file.close()
         
         # Filename for resulting CSV, which is passed into the program
-        savepath_empty = filedialog.asksaveasfilename(defaultextension='.csv')
+        savepath_empty = tkinter.filedialog.asksaveasfilename(defaultextension='.csv')
         with open(savepath_empty, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, dialect='excel')
             writer.writerow(['Frequency', 'S11', 'S21', 'S12', 'S22'])
@@ -160,7 +170,7 @@ if(data_format):
     s22_im = []
     
     # Selection of empty airline s2p file
-    filepath = filedialog.askopenfilename(title='Select MUT Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
+    filepath = tkinter.filedialog.askopenfilename(title='Select MUT Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
     file = open(filepath, "r")
     
     # S2P file parsing
@@ -180,7 +190,7 @@ if(data_format):
     file.close()
     
     # Filename for resulting CSV, which is passed into the program
-    savepath_mut = filedialog.asksaveasfilename(defaultextension='.csv')
+    savepath_mut = tkinter.filedialog.asksaveasfilename(defaultextension='.csv')
     with open(savepath_mut, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, dialect='excel')
         writer.writerow(['Frequency', 'S11', 'S21', 'S12', 'S22'])
@@ -195,8 +205,8 @@ if(data_format):
     
 else:
     if(air_cal_dialog):
-        savepath_empty = filedialog.askopenfilename(title="Select Empty Airline Data CSV", filetypes=[("Comma Separated Values", '*.csv')])
-    savepath_mut = filedialog.askopenfilename(title="Select MUT Airline Data CSV", filetypes=[("Comma Separated Values", '*.csv')])
+        savepath_empty = tkinter.filedialog.askopenfilename(title="Select Empty Airline Data CSV", filetypes=[("Comma Separated Values", '*.csv')])
+    savepath_mut = tkinter.filedialog.askopenfilename(title="Select MUT Airline Data CSV", filetypes=[("Comma Separated Values", '*.csv')])
 
 if(air_cal_dialog):
     # Load sample data as matrices
@@ -216,25 +226,9 @@ mut_matrix = np.genfromtxt(
     converters={k: lambda x: complex(x.replace(b' ', b'').decode()) for k in range(3)}
 )
 
-if(gate_dialog):
-    # plot
-    fig, ax = plt.subplots()
-    ax.plot(np.real(mut_matrix[:,0]), 20*np.log10(abs(mut_matrix[:,1])), linewidth=2.0)
-    plt.xlabel("Frequency (GHz)")
-    plt.ylabel("S11")
-    plt.grid(visible=True, axis='both')
-    plt.show()
-    
-    fig2, ax2 = plt.subplots()
-    ax2.plot(np.arange(), np.fft.ifft(mut_matrix[:,1]), linewidth=2.0)
-    plt.xlabel("Frequency (GHz)")
-    plt.ylabel("S11")
-    plt.grid(visible=True, axis='both')
-    plt.show()
-
 # Constants to be used for the calculation
 c = 299792458
-sample_length = simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
+sample_length = tkinter.simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
 #cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
 #cutoff_λ = c / (cutoff_frequency * pow(10,9))
 freq = np.real(mut_matrix[:,0])*1e9
@@ -292,25 +286,44 @@ ln_delay = np.log(np.absolute(delay)) + 1j * np.angle(delay)
 inv_Λ_sq = np.multiply(np.square(np.multiply(1 / (2 * math.pi * sample_length), ln_delay)), -1)
 inv_Λ = np.sqrt(inv_Λ_sq)
 
-mu = inv_Λ * ((1 + Γ) / (1 - Γ)) * λ
+μ = inv_Λ * ((1 + Γ) / (1 - Γ)) * λ
 
-ε_term1 = np.divide(np.square(λ),mu)
+ε_term1 = np.divide(np.square(λ),μ)
 ε = ε_term1 * inv_Λ_sq
 
+eps_graph = GraphFrame(root, highlightbackground="black", highlightthickness=1)
+eps_graph.ax.plot(freq / 1e9, np.real(ε), linewidth=2.0)
+eps_graph.grid(column=0, row=0, padx=10, pady=4)
+eps_graph.ax.set_xlabel("freq [GHz]")
+eps_graph.ax.set_ylabel("eps_r")
+eps_graph.ax.set_title("Relative Permittivity")
+eps_graph.ax.grid(visible=True, axis='both')
 
-# plot
-fig, ax = plt.subplots()
-ax.plot(freq, np.real(ε), linewidth=2.0)
-#ax.plot(np.real(mut_matrix[:,0]), np.imag(ε) / np.real(ε), linewidth=2.0)
-plt.xlabel("Frequency (GHz)")
-plt.ylabel("ε_r")
-plt.grid(visible=True, axis='both')
-plt.show()
+lt_graph = GraphFrame(root, highlightbackground="black", highlightthickness=1)
+lt_graph.ax.plot(freq / 1e9, -np.imag(ε) / np.real(ε), linewidth=2.0)
+lt_graph.grid(column=1, row=0, padx=10, pady=4)
+lt_graph.ax.set_xlabel("freq [GHz]")
+lt_graph.ax.set_ylabel("loss tangent")
+lt_graph.ax.set_title("Loss Tangent")
+lt_graph.ax.grid(visible=True, axis='both')
 
-fig, ax = plt.subplots()
-#ax.plot(freq, np.real(ε), linewidth=2.0)
-ax.plot(np.real(mut_matrix[:,0]), -np.imag(ε) / np.real(ε), linewidth=2.0)
-plt.xlabel("Frequency (GHz)")
-plt.ylabel("loss tangent")
-plt.grid(visible=True, axis='both')
-plt.show()
+s11_graph = GraphFrame(root, highlightbackground="black", highlightthickness=1)
+s11_graph.ax.plot(freq / 1e9, np.absolute(s11_mut), linewidth=2.0)
+s11_graph.grid(column=0, row=1, padx=10, pady=4)
+s11_graph.ax.set_xlabel("freq [GHz]")
+s11_graph.ax.set_ylabel("S11 [dB]")
+s11_graph.ax.set_title("S11")
+s11_graph.ax.grid(visible=True, axis='both')
+
+mu_graph = GraphFrame(root, highlightbackground="black", highlightthickness=1)
+mu_graph.ax.plot(freq / 1e9, np.real(μ), linewidth=2.0)
+mu_graph.grid(column=1, row=1, padx=10, pady=4)
+mu_graph.ax.set_xlabel("freq [GHz]")
+mu_graph.ax.set_ylabel("mu")
+mu_graph.ax.set_title("Relative Permeability")
+mu_graph.ax.grid(visible=True, axis='both')
+
+button_quit = tkinter.Button(master=root, text="Quit", command=root.destroy, bg="#FEB09F")
+button_quit.grid(column=0, row=2, columnspan=2, sticky=(tkinter.E, tkinter.W), pady=4, padx=4)
+
+tkinter.mainloop()

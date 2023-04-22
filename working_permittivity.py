@@ -318,6 +318,16 @@ eps = np.multiply(eps_term1, inv_lambda_sq)
 # eps_inside = np.add(np.multiply(ln_delay_term1, eps_inside1), ln_delay_term2)
 # eps = -np.square(eps_inside)
 
+fig = Figure(figsize=(5, 4), dpi=100)
+t = np.arange(0, 3, .01)
+ax = fig.add_subplot()
+line, = ax.plot(t, 2 * np.sin(2 * np.pi * t))
+ax.set_xlabel("time [s]")
+ax.set_ylabel("f(t)")
+
+canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+canvas.draw()
+
 # plot
 fig, ax = plt.subplots()
 ax.plot(freq, np.real(eps), linewidth=2.0)
