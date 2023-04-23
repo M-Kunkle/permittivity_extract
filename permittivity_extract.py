@@ -84,7 +84,7 @@ import math
 import csv
 import numpy as np
 
-#plt.style.use('fast')
+plt.style.use('bmh')
 
 class GraphFrame(tkinter.Frame):
     def __init__(self, master=None, **kwargs):
@@ -105,7 +105,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 air_cal_dialog = tkinter.messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
 data_format = tkinter.messagebox.askyesno(title="Data Format Selection", message="Is your data formatted into an s2p file?")
-gate_dialog = tkinter.messagebox.askyesno(title="Time Gating Selection", message="Apply time gating to S-Parameters?")
+ghz_dialog = tkinter.messagebox.askyesno(title="Frequency Selection", message="Frequency in GHz?")
 
 if(data_format):
     '''
@@ -229,9 +229,12 @@ mut_matrix = np.genfromtxt(
 # Constants to be used for the calculation
 c = 299792458
 sample_length = tkinter.simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
-#cutoff_frequency = simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
-#cutoff_λ = c / (cutoff_frequency * pow(10,9))
-freq = np.real(mut_matrix[:,0])*1e9
+cutoff_frequency = tkinter.simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
+cutoff_λ = c / (cutoff_frequency * pow(10,9))
+if(ghz_dialog):
+    freq = np.real(mut_matrix[:,0])
+else:
+    freq = np.real(mut_matrix[:,0])*1e9
 λ = c / freq
 beta = np.divide(2*math.pi, λ)
 
@@ -246,9 +249,7 @@ if(air_cal_dialog):
     Airline calibration:
     '''
     
-    s11_mut = np.subtract(mut_matrix[:,1], air_matrix[:,1])
-    #s11_denom = np.subtract(metal_matrix[1], air_matrix[1])
-    #s11_mut = -1 * np.divide(s11_numer[1], s11_denom[1])
+    s11_mut = -1 * ((mut_matrix[:,1] -  air_matrix[:,1]) / (1 - air_matrix[:,1]))
     
     # normalization factor split up into two separate terms
     s21_normalize = np.divide(mut_matrix[:,2], air_matrix[:,2])
@@ -308,7 +309,7 @@ lt_graph.ax.set_title("Loss Tangent")
 lt_graph.ax.grid(visible=True, axis='both')
 
 s11_graph = GraphFrame(root, highlightbackground="black", highlightthickness=1)
-s11_graph.ax.plot(freq / 1e9, np.absolute(s11_mut), linewidth=2.0)
+s11_graph.ax.plot(freq / 1e9, 20*np.log10(np.absolute(s11_mut)), linewidth=2.0)
 s11_graph.grid(column=0, row=1, padx=10, pady=4)
 s11_graph.ax.set_xlabel("freq [GHz]")
 s11_graph.ax.set_ylabel("S11 [dB]")
