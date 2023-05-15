@@ -86,6 +86,8 @@ import numpy as np
 
 plt.style.use('bmh')
 
+
+
 class GraphFrame(tkinter.Frame):
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -108,6 +110,7 @@ data_format = tkinter.messagebox.askyesno(title="Data Format Selection", message
 ghz_dialog = tkinter.messagebox.askyesno(title="Frequency Selection", message="Frequency in GHz?")
 
 if(data_format):
+    ffx = tkinter.messagebox.askyesno(title="Fieldfox S2P?", message="S2P from fieldfox?")
     '''
     Conversion of S2P file of measured S-parameter data into matrices
     that can be used for data post processing
@@ -127,20 +130,37 @@ if(data_format):
         filepath = tkinter.filedialog.askopenfilename(parent = root,title='Select Empty Airline S2P', filetypes=[("S-Parameter File",'*.s2p')])
         file = open(filepath, "r")
         
-        # S2P file parsing
-        for line in file:
-            curr_line = line.split()
-            if curr_line[0].replace('.', '', 1).isdigit():
-                freq.append(float(curr_line[0]))
-                s11_real.append(float(curr_line[1])*math.cos((math.pi*float(curr_line[2]))/180))
-                s11_im.append(float(curr_line[1])*math.sin((math.pi*float(curr_line[2]))/180))
-                s21_real.append(float(curr_line[3])*math.cos((math.pi*float(curr_line[4]))/180))
-                s21_im.append(float(curr_line[3])*math.sin((math.pi*float(curr_line[4]))/180))
-                s12_real.append(float(curr_line[5])*math.cos((math.pi*float(curr_line[6]))/180))
-                s12_im.append(float(curr_line[5])*math.sin((math.pi*float(curr_line[6]))/180))
-                s22_real.append(float(curr_line[7])*math.cos((math.pi*float(curr_line[8]))/180))
-                s22_im.append(float(curr_line[7])*math.sin((math.pi*float(curr_line[8]))/180))
-        file.close()
+        if(ffx):
+            # ffx S2P file parsing
+            for line in file:
+                curr_line = line.split()
+                if curr_line[0].replace('.', '', 1).isdigit():
+                    freq.append(float(curr_line[0]))
+                    s11_real.append(10**(float(curr_line[1])/20)*math.cos((math.pi*float(curr_line[2]))/180))
+                    s11_im.append(10**(float(curr_line[1])/20)*math.sin((math.pi*float(curr_line[2]))/180))
+                    s21_real.append(10**(float(curr_line[3])/20)*math.cos((math.pi*float(curr_line[4]))/180))
+                    s21_im.append(10**(float(curr_line[3])/20)*math.sin((math.pi*float(curr_line[4]))/180))
+                    s12_real.append(10**(float(curr_line[5])/20)*math.cos((math.pi*float(curr_line[6]))/180))
+                    s12_im.append(10**(float(curr_line[5])/20)*math.sin((math.pi*float(curr_line[6]))/180))
+                    s22_real.append(10**(float(curr_line[7])/20)*math.cos((math.pi*float(curr_line[8]))/180))
+                    s22_im.append(10**(float(curr_line[7])/20)*math.sin((math.pi*float(curr_line[8]))/180))
+            file.close()
+            
+        else:
+            # S2P file parsing
+            for line in file:
+                curr_line = line.split()
+                if curr_line[0].replace('.', '', 1).isdigit():
+                    freq.append(float(curr_line[0]))
+                    s11_real.append(float(curr_line[1])*math.cos((math.pi*float(curr_line[2]))/180))
+                    s11_im.append(float(curr_line[1])*math.sin((math.pi*float(curr_line[2]))/180))
+                    s21_real.append(float(curr_line[3])*math.cos((math.pi*float(curr_line[4]))/180))
+                    s21_im.append(float(curr_line[3])*math.sin((math.pi*float(curr_line[4]))/180))
+                    s12_real.append(float(curr_line[5])*math.cos((math.pi*float(curr_line[6]))/180))
+                    s12_im.append(float(curr_line[5])*math.sin((math.pi*float(curr_line[6]))/180))
+                    s22_real.append(float(curr_line[7])*math.cos((math.pi*float(curr_line[8]))/180))
+                    s22_im.append(float(curr_line[7])*math.sin((math.pi*float(curr_line[8]))/180))
+            file.close()
         
         # Filename for resulting CSV, which is passed into the program
         savepath_empty = tkinter.filedialog.asksaveasfilename(defaultextension='.csv')
@@ -174,18 +194,35 @@ if(data_format):
     file = open(filepath, "r")
     
     # S2P file parsing
-    for line in file:
-        curr_line = line.split()
-        if curr_line[0].replace('.', '', 1).isdigit():
-            freq.append(float(curr_line[0]))
-            s11_real.append(float(curr_line[1])*math.cos((math.pi*float(curr_line[2]))/180))
-            s11_im.append(float(curr_line[1])*math.sin((math.pi*float(curr_line[2]))/180))
-            s21_real.append(float(curr_line[3])*math.cos((math.pi*float(curr_line[4]))/180))
-            s21_im.append(float(curr_line[3])*math.sin((math.pi*float(curr_line[4]))/180))
-            s12_real.append(float(curr_line[5])*math.cos((math.pi*float(curr_line[6]))/180))
-            s12_im.append(float(curr_line[5])*math.sin((math.pi*float(curr_line[6]))/180))
-            s22_real.append(float(curr_line[7])*math.cos((math.pi*float(curr_line[8]))/180))
-            s22_im.append(float(curr_line[7])*math.sin((math.pi*float(curr_line[8]))/180))
+    if(ffx):
+        # ffx S2P file parsing
+        for line in file:
+            curr_line = line.split()
+            if curr_line[0].replace('.', '', 1).isdigit():
+                freq.append(float(curr_line[0]))
+                s11_real.append(10**(float(curr_line[1])/20)*math.cos((math.pi*float(curr_line[2]))/180))
+                s11_im.append(10**(float(curr_line[1])/20)*math.sin((math.pi*float(curr_line[2]))/180))
+                s21_real.append(10**(float(curr_line[3])/20)*math.cos((math.pi*float(curr_line[4]))/180))
+                s21_im.append(10**(float(curr_line[3])/20)*math.sin((math.pi*float(curr_line[4]))/180))
+                s12_real.append(10**(float(curr_line[5])/20)*math.cos((math.pi*float(curr_line[6]))/180))
+                s12_im.append(10**(float(curr_line[5])/20)*math.sin((math.pi*float(curr_line[6]))/180))
+                s22_real.append(10**(float(curr_line[7])/20)*math.cos((math.pi*float(curr_line[8]))/180))
+                s22_im.append(10**(float(curr_line[7])/20)*math.sin((math.pi*float(curr_line[8]))/180))
+        
+    else:
+        # S2P file parsing
+        for line in file:
+            curr_line = line.split()
+            if curr_line[0].replace('.', '', 1).isdigit():
+                freq.append(float(curr_line[0]))
+                s11_real.append(float(curr_line[1])*math.cos((math.pi*float(curr_line[2]))/180))
+                s11_im.append(float(curr_line[1])*math.sin((math.pi*float(curr_line[2]))/180))
+                s21_real.append(float(curr_line[3])*math.cos((math.pi*float(curr_line[4]))/180))
+                s21_im.append(float(curr_line[3])*math.sin((math.pi*float(curr_line[4]))/180))
+                s12_real.append(float(curr_line[5])*math.cos((math.pi*float(curr_line[6]))/180))
+                s12_im.append(float(curr_line[5])*math.sin((math.pi*float(curr_line[6]))/180))
+                s22_real.append(float(curr_line[7])*math.cos((math.pi*float(curr_line[8]))/180))
+                s22_im.append(float(curr_line[7])*math.sin((math.pi*float(curr_line[8]))/180))
             
     file.close()
     
@@ -230,11 +267,16 @@ mut_matrix = np.genfromtxt(
 c = 299792458
 sample_length = tkinter.simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
 cutoff_frequency = tkinter.simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
-cutoff_λ = c / (cutoff_frequency * pow(10,9))
+
+if(cutoff_frequency != 0):
+        cutoff_λ = c / (cutoff_frequency * pow(10,9))
+    
+
 if(ghz_dialog):
     freq = np.real(mut_matrix[:,0])
 else:
     freq = np.real(mut_matrix[:,0])*1e9
+    
 λ = c / freq
 beta = np.divide(2*math.pi, λ)
 
@@ -249,7 +291,7 @@ if(air_cal_dialog):
     Airline calibration:
     '''
     
-    s11_mut = -1 * ((mut_matrix[:,1] -  air_matrix[:,1]) / (1 - air_matrix[:,1]))
+    s11_mut = np.divide(-1 * (mut_matrix[:,1] -  air_matrix[:,1]), 1 - air_matrix[:,1])
     
     # normalization factor split up into two separate terms
     s21_normalize = np.divide(mut_matrix[:,2], air_matrix[:,2])
@@ -292,8 +334,14 @@ inv_Λ = np.sqrt(inv_Λ_sq)
 ε_term1 = np.divide(np.square(λ),μ)
 ε = ε_term1 * inv_Λ_sq
 
+a,b,c = np.polyfit(freq / 1e9, np.real(ε), 2)
+d,e,f = np.polyfit(freq / 1e9, np.real(μ), 2)
+
+test = np.fft.ifft(s11_mut)
+
 eps_graph = GraphFrame(root, highlightbackground="black", highlightthickness=1)
 eps_graph.ax.plot(freq / 1e9, np.real(ε), linewidth=2.0)
+#eps_graph.ax.plot(freq / 1e9, a*((freq / 1e9)**2) + b*(freq / 1e9) + c, linewidth=2.0)
 eps_graph.grid(column=0, row=0, padx=10, pady=4)
 eps_graph.ax.set_xlabel("freq [GHz]")
 eps_graph.ax.set_ylabel("eps_r")
@@ -317,7 +365,9 @@ s11_graph.ax.set_title("S11")
 s11_graph.ax.grid(visible=True, axis='both')
 
 mu_graph = GraphFrame(root, highlightbackground="black", highlightthickness=1)
+#mu_graph.ax.plot(np.fft.ifft(s11_mut))
 mu_graph.ax.plot(freq / 1e9, np.real(μ), linewidth=2.0)
+#mu_graph.ax.plot(freq / 1e9, d*((freq / 1e9)**2) + e*(freq / 1e9) + f, linewidth=2.0)
 mu_graph.grid(column=1, row=1, padx=10, pady=4)
 mu_graph.ax.set_xlabel("freq [GHz]")
 mu_graph.ax.set_ylabel("mu")
@@ -326,5 +376,25 @@ mu_graph.ax.grid(visible=True, axis='both')
 
 button_quit = tkinter.Button(master=root, text="Quit", command=root.destroy, bg="#FEB09F")
 button_quit.grid(column=0, row=2, columnspan=2, sticky=(tkinter.E, tkinter.W), pady=4, padx=4)
+
+ask_csv = tkinter.messagebox.askyesno(title="Data Export", message="Save data to an csv file?")
+
+if(ask_csv):
+    csv_file = tkinter.filedialog.asksaveasfilename(defaultextension='.csv')
+    with open(csv_file, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, dialect='excel')
+        writer.writerow(['Frequency', 'S11', 'S21', 'Complex Permittivity',\
+                         'Complex Permeability', 'Loss Tangent', 'Refractive Index'])
+        
+        for idx,line in enumerate(freq):
+            writer.writerow([freq[idx],
+                             str(np.real(s11_mut[idx])) + str(np.imag(s11_mut[idx])) + 'i', 
+                             str(np.real(s21_mut[idx])) + str(np.imag(s21_mut[idx])) + 'i',
+                             str(np.real(ε[idx])) + str(np.imag(ε[idx])) + 'i',
+                             str(np.real(μ[idx])) + str(np.imag(μ[idx])) + 'i',
+                             str(-np.imag(ε[idx]) / np.real(ε[idx])),
+                             str(np.sqrt(np.real(ε[idx]) * np.real(μ[idx])))
+                             ])
+    csvfile.close()
 
 tkinter.mainloop()
