@@ -38,6 +38,7 @@ Airline Calibration Equations:
     
     Where G[x] is a timegate that is performed by using an inverse fourier
     transform to convert to time domain and take only the first set of reflections.
+    G[x] can be ignored if you wish.
     
     Once S11 and S21 have been calculated with airline calibration, they
     are run through Nicholson-Ross-Weir method.
@@ -266,10 +267,10 @@ mut_matrix = np.genfromtxt(
 # Constants to be used for the calculation
 c = 299792458
 sample_length = tkinter.simpledialog.askfloat("Sample Length", "Please enter the length of the sample in m:")
-cutoff_frequency = tkinter.simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
+#cutoff_frequency = tkinter.simpledialog.askfloat("Cutoff Frequency", "Please enter the cutoff frequency in GHz:")
 
-if(cutoff_frequency != 0):
-        cutoff_λ = c / (cutoff_frequency * pow(10,9))
+#if(cutoff_frequency != 0):
+#        cutoff_λ = c / (cutoff_frequency * pow(10,9))
     
 
 if(ghz_dialog):
@@ -300,6 +301,14 @@ if(air_cal_dialog):
 else: 
     s11_mut = mut_matrix[:,1]
     s21_mut = mut_matrix[:,2]
+
+s11_angle = np.angle(s11_mut)
+s21_angle = np.angle(s21_mut)
+
+d_air = .05
+d_sample = .01
+
+position_uncertainty = ((d_air - d_sample) / 2) - ((λ * (s11_angle - s21_angle))/2)
 
 '''
 Nicholson-Ross-Weir Calculations
@@ -334,8 +343,8 @@ inv_Λ = np.sqrt(inv_Λ_sq)
 ε_term1 = np.divide(np.square(λ),μ)
 ε = ε_term1 * inv_Λ_sq
 
-a,b,c = np.polyfit(freq / 1e9, np.real(ε), 2)
-d,e,f = np.polyfit(freq / 1e9, np.real(μ), 2)
+#a,b,c = np.polyfit(freq / 1e9, np.real(ε), 2)
+#d,e,f = np.polyfit(freq / 1e9, np.real(μ), 2)
 
 test = np.fft.ifft(s11_mut)
 
