@@ -35,6 +35,7 @@ root.geometry("+100+20")
 np.seterr(divide='ignore', invalid='ignore')
 
 #air_cal_dialog = tkinter.messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
+air_cal_dialog = False
 data_format = tkinter.messagebox.askyesno(title="Data Format Selection", message="Is your data formatted into an s2p file?")
 ghz_dialog = tkinter.messagebox.askyesno(title="Frequency Selection", message="Frequency in GHz?")
 
