@@ -1,78 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar  1 19:17:32 2023
-
-Used for the purpose of extracting permittivity results from measured sample
-data. Measured data of MUT and air and metal to collect the proper S-Parameter (SP)
-matrix. Proper SP matrix is then fed through a Nicholson-Ross-Weir method to determine
-the complex permittivity.
-
-Data Input:
-    L_Matrix = SP matrix of airline with only air inside.
-    T_Matrix = SP matrix of airline with the actual MUT inside.
-    M_Matrix = SP matrix of airline with identical sample size but made of metal.
-    
-    d = length of sample
-    f = frequency of given point
-
-Airline Calibration Equations:
-    
-    Test setup requires a material machined into a hollow cylinder with inner
-    dimension of the cylinder being the size of the center conductor pin. The 
-    outside cylinder radius should fill the airline as much as possible. The 
-    length of the sample is ideally the full length of the airline, but if the 
-    sample does not fill the airline, it must be completely as centered inside
-    the airline, with equal amounts of air on either side.
-    
-    S11_MUT = -1 * G[T11 - L11] / G[M11 - L11]
-    
-    If metal sample is unavailable, the calculation can be ran without
-    but the accuracy will be slightly lowered, equation then becomes
-    
-    S11_MUT = G[T11 - L11]
-
-    S21_MUT = (G[T21] / G[L21]) * e^(-jBd)
-    
-    The exponential term on the end of the S21 normalization is used to account
-    for the phase delay that occurs when the wave is passed through the dielectric.
-    
-    Where G[x] is a timegate that is performed by using an inverse fourier
-    transform to convert to time domain and take only the first set of reflections.
-    G[x] can be ignored if you wish.
-    
-    Once S11 and S21 have been calculated with airline calibration, they
-    are run through Nicholson-Ross-Weir method.
-
-Nicholson-Ross-Weir Equations:
-    
-    X = (S11^2 - S21^2 + 1) / (2 * S11)
-    
-    Γ = X +- sqrt(X^2 - 1)
-    
-    Γ value has a plus or minus, the value that is actually used is the
-    one that has a magnitude(Γ) < 1
-    
-    T = (S11 + S21 - Γ) / (1-(S11+S21)*Γ)
-    
-    1 / Λ ^2 = -(1/(2*pi*d) * ln (1/T))^2
-    
-    Permeability, μ_r, is then calculated to be,
-    
-    μ_r = (1 + Γ) / (Λ * (1 - Γ) * sqrt((1/ω_0)^2 - (1/ω_c)^2))
-    
-    Permittivity ε_r is then calculated to be,
-    
-    ε_r = (ω_0^2 / μ_r) * ((1 / ω_c)^2 + 1 / Λ^2)
-    
-References:
-    1. A. M. Hassan, J. Obrzut and E. J. Garboczi, "A  Q  -Band Free-Space Characterization of 
-    Carbon Nanotube Composites," in IEEE Transactions on Microwave Theory and Techniques, 
-    vol. 64, no. 11, pp. 3807-3819, Nov. 2016, doi: 10.1109/TMTT.2016.2603500.
-    
-    2. A. M. Nicolson and G. F. Ross, "Measurement of the Intrinsic Properties of Materials by
-    Time-Domain Techniques," in IEEE Transactions on Instrumentation and Measurement,
-    vol. 19, no. 4, pp. 377-382, Nov. 1970, doi: 10.1109/TIM.1970.4313932.
-        
         
 @author: M. Kunkle
 """
@@ -106,7 +34,7 @@ root.geometry("+100+20")
 
 np.seterr(divide='ignore', invalid='ignore')
 
-air_cal_dialog = tkinter.messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
+#air_cal_dialog = tkinter.messagebox.askyesno(title="Airline Calibration", message="Do you require an airline calibration?")
 data_format = tkinter.messagebox.askyesno(title="Data Format Selection", message="Is your data formatted into an s2p file?")
 ghz_dialog = tkinter.messagebox.askyesno(title="Frequency Selection", message="Frequency in GHz?")
 
